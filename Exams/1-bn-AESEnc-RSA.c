@@ -59,8 +59,12 @@ int int main(int argc, char const *argv[])
 	int update_len, final_len, ciphertext_len = 0;
 
 	EVP_CipherUpdate(ctx, ciphertext, &update_len, c_k2, strlen(c_k2));
+	
+	ciphertext_len += update_len;
 	EVP_CipherFinal_ex(ctx, ciphertext+ciphertext_len, &final_len);
-
+	ciphertext_len += final_len;
+	
+	
 	RSA *rsa_kp = NULL;
 	BIGNUM *bne = NULL;
 

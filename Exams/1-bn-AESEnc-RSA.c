@@ -8,42 +8,43 @@
 
 int int main(int argc, char const *argv[])
 {
-    OpenSSL_add_all_algorithms();
-
-	unsigned char r1[16], r2[16];
-
-	RAND_load_file("dev/random", 64);
-	RAND_bytes(r1, 16);
-	RAND_bytes(r2, 16);
+    ERR_load_crypto_strings();
+	OpenSSL_add_all_algorithms();
 
 	BIGNUM *rand1 = BN_new();
 	BIGNUM *rand2 = BN_new();
 
-	BN_dec2bn(&rand1, r1);
-	BN_dec2bn(&rand2, r2);
+	if(RAND_load_file("/dev/random", 64) != 64)
+	handle_errors();
+
+	BN_rand(rand1, 128, 0, 1);
+	BN_rand(rand2, 128, 0, 1);
+
+	//k1 = (rand1 + rand2) * (rand1 - rand2) mod 2^128
+	//k2 = (rand1 * rand2) / (rand1 - rand2) mod 2^128
+
+	BIGNUM *left_member_rand = BN_new();
+	BIGNUM *diff_rand = BN_new();
+	BIGNUM *k1 = BN_new();
+	BIGNUM *k2 = BN_new();
+	BIGNUM *mod = BN_new();
+	BIGNUM *exp = BN_new();
+	BIGNUM *base = BN_new();
 
 	BN_CTX *ctx = BN_CTX_new();
 
-	BIGNUM *var1 = BN_new();
-	BIGNUM *var2 = BN_new();
-
-	BN_add(var1, rand1, rand2);
-	BN_sub(var2, rand1, rand2);
-
-	BIGNUM *exp = BN_new();
-	BIGNUM *base = BN_new();
-	BIGNUM *mod = BN_new();
 	BN_dec2bn(&exp, "128");
 	BN_dec2bn(&base, "2");
 	BN_exp(mod, base, exp, ctx);
 
-	BIGNUM *k1 = BN_new();
-	BIGNUM *k2 = BN_new();
+	BN_add(left_member_rand, rand1, rand2);
+	BN_sub(diff_rand, rand1, rand2);
 
-	BN_mul(k1, var1, var2, ctx);
-	BN_div(k2, NULL, var1, var2, ctx);
-
+	BN_mul(k1, left_member_rand, diff_rand, ctx);
 	BN_mod(k1, k1, mod);
+
+	BN_mul(left_member_rand, rand1, rand2, ctx);
+	BN_div(k2, left_member_rand, diff_rand, ctx);
 	BN_mod(k2, k2, mod);
 
 	char *c_k1 = BN_bn2hex(k1);

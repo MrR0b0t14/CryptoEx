@@ -28,7 +28,7 @@ int int main(int argc, char const *argv[])
 	BIGNUM *var2 = BN_new();
 
 	BN_add(var1, rand1, rand2);
-	BN_sub(var1, rand1, rand2);
+	BN_sub(var2, rand1, rand2);
 
 	BIGNUM *exp = BN_new();
 	BIGNUM *base = BN_new();
